@@ -2,3 +2,8 @@
 out/
 build/
 conan_files/
+.idea/
+.run/
+*.bat
+*.sh
+run/Logs/*.log
