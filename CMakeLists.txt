@@ -19,18 +19,16 @@ include("cmake/conan.cmake")
 # Ninja fixes
 include("cmake/ninja_fix.cmake")
 
+# Add library
+include("cmake/library.cmake")
+
 # #defines
 include("cmake/defines.cmake")
 
 # Launch functions
 include("cmake/launch.cmake")
 
-add_executable(test "${PROJECT_SOURCE_DIR}/test.cpp")
-target_link_libraries(test PRIVATE archimedes::archimedes)
-target_include_directories(test PRIVATE ${CMAKE_INCLUDE_PATH})
-
-LaunchAddTarget(test)
-
-LaunchMake()
+# Add targets
+include("cmake/targets.cmake")
 
 #target_include_directories(test archimedes_INCLUDE_DIRS)

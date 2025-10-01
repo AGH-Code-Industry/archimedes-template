@@ -26,7 +26,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/.idea" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/.ide
 			# write xml launch file
 			file(WRITE "${CMAKE_SOURCE_DIR}/.run/${EXE_TARGET}.run.xml"
 "<component name=\"ProjectRunConfigurationManager\">
-  <configuration default=\"false\" name=\"${EXE_TARGET}\" type=\"CMakeRunConfiguration\" factoryName=\"Application\" REDIRECT_INPUT=\"false\" ELEVATE=\"false\" USE_EXTERNAL_CONSOLE=\"false\" EMULATE_TERMINAL=\"false\" WORKING_DIR=\"file://${CMAKE_SOURCE_DIR}/run\" PASS_PARENT_ENVS_2=\"true\" PROJECT_NAME=\"archimedes\" TARGET_NAME=\"${EXE_TARGET}\" RUN_TARGET_PROJECT_NAME=\"archimedes\" RUN_TARGET_NAME=\"${EXE_TARGET}\">
+  <configuration default=\"false\" name=\"${EXE_TARGET}\" type=\"CMakeRunConfiguration\" factoryName=\"Application\" REDIRECT_INPUT=\"false\" ELEVATE=\"false\" USE_EXTERNAL_CONSOLE=\"false\" EMULATE_TERMINAL=\"false\" WORKING_DIR=\"file://${CMAKE_SOURCE_DIR}/run\" PASS_PARENT_ENVS_2=\"true\" PROJECT_NAME=\"${PROJECT_NAME}\" TARGET_NAME=\"${EXE_TARGET}\" RUN_TARGET_PROJECT_NAME=\"${PROJECT_NAME}\" RUN_TARGET_NAME=\"${EXE_TARGET}\">
     <method v=\"2\">
       <option name=\"com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask\" enabled=\"true\" />
     </method>
