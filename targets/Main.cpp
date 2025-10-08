@@ -1,16 +1,17 @@
 #include <archimedes/Engine.h>
 #include <VulkanVs.h>
+#include <Config.h>
 
 int main() {
 	arch::Logger::init(arch::LogLevel::debug);
 
 	arch::Unique<arch::Application> application = arch::createUnique<vs::VulkanVs>();
 
-	auto engineConfig = arch::EngineConfig {
-		.windowWidth = 1600,
-		.windowHeight = 900,
+	auto engineConfig = arch::EngineConfig{
+		.windowWidth = vs::windowWidth,
+		.windowHeight = vs::windowHeight,
 		.windowTitle = "VulkanVs",
-		.backgroundColor = arch::Color(0,0,0,0),
+		.backgroundColor = arch::Color(0, 0, 0, 0),
 		.renderingApi = arch::gfx::RenderingAPI::Nvrhi_VK
 	};
 
