@@ -7,3 +7,4 @@ conan_files/
 *.bat
 *.sh
 run/Logs/*.log
+run/msdf_cache/
