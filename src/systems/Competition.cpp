@@ -64,60 +64,64 @@ void CompetitionSystem::update(Scene& scene) {
 		maxParticlesRight = 0;
 	}
 
-	{
-		auto max = scene.entitiesWith<CompetitionMaxTextFlag<false>>().front();
-		auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<false>>().front();
+	static auto lastUpdate = std::chrono::high_resolution_clock::now() - std::chrono::milliseconds(100);
+	const auto now = std::chrono::high_resolution_clock::now();
 
-		auto currParticles = scene.domain().components<Particle<false>>().base().count();
-		maxParticlesLeft = std::max(maxParticlesLeft, currParticles);
+	if (now - lastUpdate >= std::chrono::milliseconds(50)) {
+		{
+			auto max = scene.entitiesWith<CompetitionMaxTextFlag<false>>().front();
+			auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<false>>().front();
 
-		auto buffer = defaultUniformBuffer();
+			auto currParticles = scene.domain().components<Particle<false>>().base().count();
+			maxParticlesLeft = std::max(maxParticlesLeft, currParticles);
 
-		max.removeComponent<text::TextComponent>();
-		max.addComponent(
-			text::TextComponent(
-				text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesLeft))),
-				{buffer},
-				"Arial"
-			)
-		);
-		curr.removeComponent<text::TextComponent>();
-		curr.addComponent(
-			text::TextComponent(
-				text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
-				{buffer},
-				"Arial"
-			)
-		);
+			auto buffer = defaultUniformBuffer();
+
+			max.removeComponent<text::TextComponent>();
+			max.addComponent(
+				text::TextComponent(
+					text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesLeft))),
+					{buffer},
+					"Arial"
+				)
+			);
+			curr.removeComponent<text::TextComponent>();
+			curr.addComponent(
+				text::TextComponent(
+					text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
+					{buffer},
+					"Arial"
+				)
+			);
+		}
+		{
+			auto max = scene.entitiesWith<CompetitionMaxTextFlag<true>>().front();
+			auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<true>>().front();
+
+			auto currParticles = scene.domain().components<Particle<true>>().base().count();
+			maxParticlesRight = std::max(maxParticlesRight, currParticles);
+
+			auto buffer = defaultUniformBuffer();
+
+			max.removeComponent<text::TextComponent>();
+			max.addComponent(
+				text::TextComponent(
+					text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesRight))),
+					{buffer},
+					"Arial"
+				)
+			);
+			curr.removeComponent<text::TextComponent>();
+			curr.addComponent(
+				text::TextComponent(
+					text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
+					{buffer},
+					"Arial"
+				)
+			);
+		}
+		lastUpdate = now;
 	}
-	{
-		auto max = scene.entitiesWith<CompetitionMaxTextFlag<true>>().front();
-		auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<true>>().front();
-
-		auto currParticles = scene.domain().components<Particle<true>>().base().count();
-		maxParticlesRight = std::max(maxParticlesRight, currParticles);
-
-		auto buffer = defaultUniformBuffer();
-
-		max.removeComponent<text::TextComponent>();
-		max.addComponent(
-			text::TextComponent(
-				text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesRight))),
-				{buffer},
-				"Arial"
-			)
-		);
-		curr.removeComponent<text::TextComponent>();
-		curr.addComponent(
-			text::TextComponent(
-				text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
-				{buffer},
-				"Arial"
-			)
-		);
-	}
-
-
 }
 
 }
