@@ -55,7 +55,7 @@ void ExplosionSystem::makeExplosion(Scene& scene, Entity wulkan) {
 	makeText(scene);
 
 	auto&& source = wulkan.firstChild().getComponent<audio::AudioSourceComponent>();
-	scene.domain().global<SoundManager>().audioManager->stopSource(source);
+	scene.domain().global<SoundManager>().audioManager->rewindSource(source);
 	scene.domain().global<SoundManager>().audioManager->playSource(source);
 }
 

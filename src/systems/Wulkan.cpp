@@ -87,7 +87,7 @@ void setupAudioSource(Entity wulkan, const Wulkan& wulkanComp) {
 	sourceComp.path = explosionSoundPath;
 	sourceComp.isLooped = false;
 	sourceComp.rolloffFactor = 0.01f;
-	sourceComp.dontRemoveFinished = false;
+	sourceComp.dontRemoveFinished = true;
 	auto&& soundManager = scene::SceneManager::get()->currentScene()->domain().global<SoundManager>();
 	soundManager.audioManager->assignSource(sourceComp/*, transform, movable*/);
 }
