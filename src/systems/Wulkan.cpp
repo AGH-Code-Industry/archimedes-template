@@ -5,8 +5,13 @@
 #include <Defaults.h>
 #include <Config.h>
 #include <systems/Explosion.h>
+#include <archimedes/physics/components/Moveable.h>
+#include <archimedes/audio/AudioSourceComponent.h>
+#include <SoundManager.h>
 
 namespace vs {
+
+void setupAudioSource(Entity wulkan, const Wulkan& wulkanComp);
 
 void WulkanSystem::setup(Entity wulkan, input::Key& key, bool isRight) {
 	auto renderer = gfx::Renderer::getCurrent();
@@ -64,6 +69,27 @@ void WulkanSystem::setup(Entity wulkan, input::Key& key, bool isRight) {
 			.isRight = isRight
 		}
 	);
+
+	setupAudioSource(wulkan, wulkanComponent);
+}
+
+void setupAudioSource(Entity wulkan, const Wulkan& wulkanComp) {
+	auto source = wulkan.addChild();
+	/*auto&& transform = source.addComponent(
+		scene::components::TransformComponent{
+			.position = wulkanComp.particleOrigin,
+			.rotation = {0, 0, 0, 1},
+			.scale = {1, 1, 0}
+		}
+	);*/
+	//auto&& movable = source.addComponent<physics::Moveable>();
+	auto&& sourceComp = source.addComponent<audio::AudioSourceComponent>();
+	sourceComp.path = explosionSoundPath;
+	sourceComp.isLooped = false;
+	sourceComp.rolloffFactor = 0.01f;
+	sourceComp.dontRemoveFinished = false;
+	auto&& soundManager = scene::SceneManager::get()->currentScene()->domain().global<SoundManager>();
+	soundManager.audioManager->assignSource(sourceComp/*, transform, movable*/);
 }
 
 void WulkanSystem::update(Scene& scene) {

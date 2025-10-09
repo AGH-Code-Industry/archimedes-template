@@ -14,6 +14,7 @@
 #include <systems/Explosion.h>
 #include <systems/Kill.h>
 #include <Config.h>
+#include <SoundManager.h>
 
 namespace vs {
 
@@ -25,8 +26,14 @@ void VulkanVs::init() noexcept {
 
 	_physicsSystem = createUnique<physics::System>(scene->domain());
 
-	WulkanSystem::setup(scene->newEntity(), input::Keyboard::shiftLeft, false);
-	WulkanSystem::setup(scene->newEntity(), input::Keyboard::shiftRight, true);
+	scene->domain().global<SoundManager>().init({explosionSoundPath});
+
+	auto wulkan1 = scene->newEntity();
+	WulkanSystem::setup(wulkan1, input::Keyboard::shiftLeft, false);
+	auto wulkan2 = scene->newEntity();
+	WulkanSystem::setup(wulkan2, input::Keyboard::shiftRight, true);
+
+	ExplosionSystem::setupListener(*scene, wulkan1, wulkan2);
 
 	GroundSystem::setup(*scene);
 
@@ -48,6 +55,8 @@ void VulkanVs::update() noexcept {
 
 	WulkanSystem::update(*scene);
 	CompetitionSystem::update(*scene);
+
+	scene->domain().global<SoundManager>().audioManager->synchronize(scene->domain());
 }
 
 }

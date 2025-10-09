@@ -8,6 +8,8 @@
 #include <components/Wulkan.h>
 #include <components/Kill.h>
 #include <systems/Particle.h>
+#include <SoundManager.h>
+#include <archimedes/physics/components/Moveable.h>
 #include <chrono>
 
 namespace vs {
@@ -51,6 +53,25 @@ void ExplosionSystem::makeExplosion(Scene& scene, Entity wulkan) {
 	}
 
 	makeText(scene);
+
+	auto&& source = wulkan.firstChild().getComponent<audio::AudioSourceComponent>();
+	scene.domain().global<SoundManager>().audioManager->stopSource(source);
+	scene.domain().global<SoundManager>().audioManager->playSource(source);
+}
+
+void ExplosionSystem::setupListener(Scene& scene, Entity wulkan1, Entity wulkan2) {
+	auto center = (wulkan1.getComponent<Wulkan>().particleOrigin + wulkan2.getComponent<Wulkan>().particleOrigin) / 2.f;
+	auto listener = scene.newEntity();
+	/*auto&& transform = listener.addComponent(
+		scene::components::TransformComponent{
+			.position = center,
+			.rotation = {0, 0, 0, 1},
+			.scale = {1, 1, 0}
+		}
+	);
+	auto&& movable = listener.addComponent<physics::Moveable>();*/
+	auto&& listenerComp = listener.addComponent<audio::ListenerComponent>();
+	scene.domain().global<SoundManager>().audioManager->setListener(scene.domain(), listenerComp/*, transform, movable*/);
 }
 
 }

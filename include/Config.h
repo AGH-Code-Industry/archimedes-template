@@ -17,4 +17,6 @@ struct Layers {
 	};
 };
 
+inline std::string explosionSoundPath = "Explosion1.ogg";
+
 }
