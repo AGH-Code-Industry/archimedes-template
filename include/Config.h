@@ -7,8 +7,8 @@ using namespace arch;
 
 namespace vs {
 
-static constexpr u32 windowWidth = 1600;
-static constexpr u32 windowHeight = 900;
+extern u32 windowWidth;
+extern u32 windowHeight;
 
 struct Layers {
 	enum Values {
@@ -17,6 +17,6 @@ struct Layers {
 	};
 };
 
-inline std::string explosionSoundPath = "Explosion1.ogg";
+extern std::string explosionSoundPath;
 
 }
