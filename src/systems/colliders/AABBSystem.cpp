@@ -6,47 +6,18 @@
 
 namespace vs::coll {
 
-bool AABBSystem::areColliding(const AABB& collider1, const AABB& collider2) {
-	return collider1.topLeft.x <= collider2.bottomRight.x && collider1.bottomRight.x >= collider2.topLeft.x &&
-		collider1.topLeft.y >= collider2.bottomRight.y && collider1.bottomRight.y <= collider2.topLeft.y;
-}
+// simple rect collision
+bool AABBSystem::areColliding(const AABB& collider1, const AABB& collider2, const float2 t1Pos, const float2 t2Pos) {
+	AABB c1 = collider1;
+	c1.topLeft += t1Pos;
+	c1.bottomRight += t1Pos;
 
-template<u32 I, u32 End>
-void iterateLayeredFetch(ecs::Domain& domain) {
-	if constexpr (I < End) {
-		domain.view<LayeredAABB<I>, const physics::Moveable>().forEach([&domain](ecs::Entity entity, const physics::Moveable& movable) {
-			domain.addComponent<PrePhysicsPos>(entity).value = movable.center.position;
-		});
-		iterateLayeredFetch<I + 1, End>(domain);
-	}
-}
+	AABB c2 = collider2;
+	c2.topLeft += t2Pos;
+	c2.bottomRight += t2Pos;
 
-template<u32 I, u32 End>
-void iterateLayeredUpdate(ecs::Domain& domain) {
-	if constexpr (I < End) {
-		for (auto&& [aabb, movable, prePos] : domain.view<LayeredAABB<I>, const physics::Moveable, const PrePhysicsPos>().components()) {
-			const auto delta = movable.center.position - prePos.value;
-			aabb.topLeft += delta;
-			aabb.bottomRight += delta;
-		}
-		iterateLayeredUpdate<I + 1, End>(domain);
-	}
-}
-
-void AABBSystem::prePhysicsFetch(ecs::Domain& domain) {
-	domain.view<AABB, const physics::Moveable>().forEach([&domain](ecs::Entity entity, const physics::Moveable& movable) {
-		domain.addComponent<PrePhysicsPos>(entity).value = movable.center.position;
-	});
-	iterateLayeredFetch<0, layerCount()>(domain);
-}
-
-void AABBSystem::postPhysicsUpdate(ecs::Domain& domain) {
-	for (auto&& [aabb, movable, prePos] : domain.view<AABB, const physics::Moveable, const PrePhysicsPos>().components()) {
-		const auto delta = movable.center.position - prePos.value;
-		aabb.topLeft += delta;
-		aabb.bottomRight += delta;
-	}
-	iterateLayeredUpdate<0, layerCount()>(domain);
+	return c1.topLeft.x <= c2.bottomRight.x && c1.bottomRight.x >= c2.topLeft.x &&
+		c1.topLeft.y >= c2.bottomRight.y && c1.bottomRight.y <= c2.topLeft.y;
 }
 
 }

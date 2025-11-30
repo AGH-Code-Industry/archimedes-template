@@ -7,11 +7,12 @@ namespace vs {
 
 Ref<gfx::Texture> makeTexture(std::string_view filename) {
 	auto renderer = gfx::Renderer::getCurrent();
-	stbi_set_flip_vertically_on_load(true);
 
 	int ignored;
 	int width;
 	int height;
+	stbi_set_flip_vertically_on_load(true);
+	// load texture from file
 	u8* loadedTextureData = stbi_load(filename.data(), &width, &height, &ignored, STBI_rgb_alpha);
 
 	if (!loadedTextureData) {
@@ -20,6 +21,7 @@ Ref<gfx::Texture> makeTexture(std::string_view filename) {
 	}
 
 	auto textureData = std::vector<Color>(width * height);
+	// copy the texture and normalize RBGA
 	std::for_each(
 		std::execution::par_unseq,
 		textureData.begin(),

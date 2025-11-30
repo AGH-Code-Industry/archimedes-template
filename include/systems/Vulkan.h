@@ -6,8 +6,9 @@ using namespace arch;
 
 namespace vs {
 
-struct WulkanSystem {
-	static void setup(Entity wulkan, input::Key& key, bool isRight);
+// volcano behavior
+struct VulkanSystem {
+	static void setup(Entity vulkan, input::Key& key, bool isRight);
 	static void update(Scene& scene);
 };
 

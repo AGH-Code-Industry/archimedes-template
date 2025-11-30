@@ -6,12 +6,13 @@ using namespace arch;
 
 namespace vs {
 
+// handles explosions
 struct ExplosionSystem {
 	static void makeText(Scene& scene);
 	static void updateText(ecs::Domain& domain);
-	static void makeExplosion(Scene& scene, Entity wulkan);
+	static void makeExplosion(Scene& scene, Entity vulkan);
 
-	static void setupListener(Scene& scene, Entity wulkan1, Entity wulkan2);
+	static void setupListener(Scene& scene, Entity vulkan1, Entity vulkan2);
 };
 
 }

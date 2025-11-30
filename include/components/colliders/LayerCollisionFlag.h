@@ -6,6 +6,7 @@ using namespace arch;
 
 namespace vs {
 
+// Flag indicating that the owner collider with layer L
 template<u32 L>
 struct LayerCollisionFlag {
 	static constexpr u32 layer = L;

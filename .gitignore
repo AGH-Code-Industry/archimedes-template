@@ -8,3 +8,5 @@ conan_files/
 *.sh
 run/Logs/*.log
 run/msdf_cache/
+run/*.exe
+run/*.pdb

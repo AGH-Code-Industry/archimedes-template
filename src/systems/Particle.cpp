@@ -10,39 +10,40 @@
 
 namespace vs {
 
-void ParticleSystem::setup(Scene& scene, Entity particle, Wulkan& wulkan) {
+void ParticleSystem::setup(Scene& scene, Entity particle, Vulkan& vulkan) {
 	static auto rng = std::mt19937(std::random_device{}());
+	// initial rotation angle distribution
 	static auto initAngleDist = std::uniform_real_distribution(0.f, 360.f);
 
-	const float size = wulkan.sizeDist(rng);
+	const float size = vulkan.sizeDist(rng);
 	auto&& transform = particle.addComponent(
 		scene::components::TransformComponent{
-			.position = wulkan.particleOrigin + float3{0, 0, -0.1f},
+			.position = vulkan.particleOrigin + float3{0, 0, -0.1f},
 			.rotation = glm::angleAxis(initAngleDist(rng), zAxis()),
 			.scale = float3{size, size, 0}
 		}
 	);
 	particle.addComponent(
 		scene::components::MeshComponent{
-			.mesh = wulkan.particleMesh,
-			.pipeline = wulkan.particlePipeline
+			.mesh = vulkan.particleMesh,
+			.pipeline = vulkan.particlePipeline
 		}
 	);
 
-	if (wulkan.isRight) {
+	if (vulkan.isRight) {
 		particle.addComponent<Particle<true>>() = {
-			.rotationQuat = glm::angleAxis(wulkan.rotationSpeedDist(rng), zAxis()),
-			.e = std::sqrt(wulkan.eDist(rng))
+			.rotationQuat = glm::angleAxis(vulkan.rotationSpeedDist(rng), zAxis()),
+			.e = std::sqrt(vulkan.eDist(rng))
 		};
 	} else {
 		particle.addComponent<Particle<false>>() = {
-			.rotationQuat = glm::angleAxis(wulkan.rotationSpeedDist(rng), zAxis()),
-			.e = std::sqrt(wulkan.eDist(rng))
+			.rotationQuat = glm::angleAxis(vulkan.rotationSpeedDist(rng), zAxis()),
+			.e = std::sqrt(vulkan.eDist(rng))
 		};
 	}
 
-	const auto angle = wulkan.explosionAngleDist(rng);
-	const auto vel = wulkan.velocityDist(rng);
+	const auto angle = vulkan.explosionAngleDist(rng);
+	const auto vel = vulkan.velocityDist(rng);
 
 	particle.addComponent(
 		physics::Moveable{
@@ -51,81 +52,55 @@ void ParticleSystem::setup(Scene& scene, Entity particle, Wulkan& wulkan) {
 			.velocity = vel * float2{-sin(angle), cos(angle)}
 		}
 	);
-	auto&& aabb = particle.addComponent<coll::LayeredAABB<Layers::particle>>();
-	aabb.topLeft = transform.position + float3{-size, size, 0} / 2.f;
-	aabb.bottomRight = transform.position - float3{-size, size, 0} / 2.f;
+	auto&& aabb = particle.addComponent<coll::LayeredAABB<Layer::particle>>();
+	aabb.topLeft = float3{-size, size, 0} / 2.f;
+	aabb.bottomRight = float3{size, -size, 0} / 2.f;
 }
 
 inline void particleCollisions(ecs::Domain& domain);
 
 void ParticleSystem::update(ecs::Domain& domain) {
+	// rotate with angular velocity
+	auto logic = [&domain]<bool IsRight>(std::bool_constant<IsRight>) {
+		auto view = domain.view<scene::components::TransformComponent, const Particle<IsRight>>();
+		for (auto&& [transform, particle] : view.components()) {
+			transform.rotation = particle.rotationQuat * transform.rotation;
+		}
+	};
+	logic(std::true_type{});
+	logic(std::false_type{});
+
 	particleCollisions(domain);
-
-	auto viewLeft = domain.view<scene::components::TransformComponent, const physics::Moveable, const Particle<false>>();
-	auto viewRight = domain.view<scene::components::TransformComponent, const physics::Moveable, const Particle<true>>();
-
-	for (auto&& [transform, movable, particle] : viewLeft.components()) {
-		transform.position = float3{movable.center.position, -0.1f};
-		transform.rotation = particle.rotationQuat * transform.rotation;
-	}
-	for (auto&& [transform, movable, particle] : viewRight.components()) {
-		transform.position = float3{movable.center.position, -0.1f};
-		transform.rotation = particle.rotationQuat * transform.rotation;
-	}
 }
 
 void particleCollisions(ecs::Domain& domain) {
 	std::vector<ecs::Entity> toRemoveCollision;
-	for (auto&& [entity, particle, movable, aabb] : domain.view<
-		Particle<false>,
-		LayerCollisionFlag<Layers::ground>,
-		physics::Moveable,
-		coll::LayeredAABB<Layers::particle>>().all()
-		) {
-		++particle.collisionCounter;
-		if (particle.collisionCounter >= 3) {
-			domain.addComponent<Kill>(entity);
-			continue;
+
+	// handle collisions with ground
+	auto logic = [&domain, &toRemoveCollision] <bool IsRight>(std::bool_constant<IsRight>) {
+		for (auto&& [entity, particle, movable, aabb, t] : domain.view<
+			Particle<IsRight>,
+			LayerCollisionFlag<Layer::ground>,
+			physics::Moveable,
+			coll::LayeredAABB<Layer::particle>,
+			scene::components::TransformComponent>().all()
+			) {
+			++particle.collisionCounter;
+			if (particle.collisionCounter >= 3) {
+				domain.addComponent<Kill>(entity);
+				continue;
+			}
+
+			const auto insideDist = -(movable.center.position.y + aabb.bottomRight.y);
+
+			movable.velocity.x *= particle.e;
+			movable.velocity.y *= -particle.e;
+
+			t.position.y = movable.center.position.y += insideDist;
 		}
-
-		const auto insideDist = -aabb.bottomRight.y;
-
-		movable.velocity.x *= particle.e;
-		movable.velocity.y *= -particle.e;
-
-		aabb.topLeft.y += insideDist;
-		aabb.bottomRight.y += insideDist;
-		movable.center.position.y += insideDist;
-
-		toRemoveCollision.push_back(entity);
-	}
-	for (auto&& [entity, particle, movable, aabb] : domain.view<
-		Particle<true>,
-		LayerCollisionFlag<Layers::ground>,
-		physics::Moveable,
-		coll::LayeredAABB<Layers::particle>>().all()
-		) {
-		++particle.collisionCounter;
-		if (particle.collisionCounter >= 3) {
-			domain.addComponent<Kill>(entity);
-			continue;
-		}
-
-		const auto insideDist = -aabb.bottomRight.y;
-
-		movable.velocity.x *= particle.e;
-		movable.velocity.y *= -particle.e;
-
-		aabb.topLeft.y += insideDist;
-		aabb.bottomRight.y += insideDist;
-		movable.center.position.y += insideDist;
-
-		toRemoveCollision.push_back(entity);
-	}
-
-	for (auto&& entity : toRemoveCollision) {
-		domain.removeComponent<LayerCollisionFlag<Layers::ground>>(entity);
-	}
+	};
+	logic(std::true_type{});
+	logic(std::false_type{});
 }
 
 

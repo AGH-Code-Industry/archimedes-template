@@ -9,119 +9,66 @@
 namespace vs {
 
 void CompetitionSystem::setup(Scene& scene) {
-	auto buffer = defaultUniformBuffer();
-
-	{
+	auto subSetup = [&scene]<bool IsRight>(std::bool_constant<IsRight>) {
+		// max score display
 		auto max = scene.newEntity();
-		max.addComponent(
+		auto&& maxTransform = max.addComponent(
 			scene::components::TransformComponent{
-				.position = {10.f, windowHeight - 100.f, -0.2f},
+				.position = {10.f + IsRight * (windowWidth / 2.f), windowHeight - 100.f, -0.2f},
 				.rotation = {0, 0, 0, 1},
 				.scale = {100, 100, 0}
 			}
 		);
-		max.addComponent<CompetitionMaxTextFlag<false>>();
+		max.addComponent<CompetitionMaxParticles<IsRight>>();
 
+		// current score display
 		auto curr = scene.newEntity();
-		curr.addComponent(
-			scene::components::TransformComponent{
-				.position = {10.f, windowHeight - 200.f, -0.2f},
-				.rotation = {0, 0, 0, 1},
-				.scale = {100, 100, 0}
-			}
-		);
-		curr.addComponent<CompetitionCurrentTextFlag<false>>();
-	}
-	{
-		auto max = scene.newEntity();
-		max.addComponent(
-			scene::components::TransformComponent{
-				.position = {10.f + windowWidth / 2.f, windowHeight - 100.f, -0.2f},
-				.rotation = {0, 0, 0, 1},
-				.scale = {100, 100, 0}
-			}
-		);
-		max.addComponent<CompetitionMaxTextFlag<true>>();
-
-		auto curr = scene.newEntity();
-		curr.addComponent(
-			scene::components::TransformComponent{
-				.position = {10.f + windowWidth / 2.f, windowHeight - 200.f, -0.2f},
-				.rotation = {0, 0, 0, 1},
-				.scale = {100, 100, 0}
-			}
-		);
-		curr.addComponent<CompetitionCurrentTextFlag<true>>();
-	}
+		auto&& currTransform = curr.addComponent<scene::components::TransformComponent>() = maxTransform;
+		currTransform.position.y -= 100;
+		curr.addComponent<CompetitionCurrentTextFlag<IsRight>>();
+	};
+	subSetup(std::true_type{});
+	subSetup(std::false_type{});
 }
 
 void CompetitionSystem::update(Scene& scene) {
-	static u32 maxParticlesLeft = 0;
-	static u32 maxParticlesRight = 0;
-
 	if (input::Keyboard::esc.down()) {
-		maxParticlesLeft = 0;
-		maxParticlesRight = 0;
+		// reset scores
+		scene.domain().components<CompetitionMaxParticles<true>>().front().value = 0;
+		scene.domain().components<CompetitionMaxParticles<false>>().front().value = 0;
 	}
 
-	static auto lastUpdate = std::chrono::high_resolution_clock::now() - std::chrono::milliseconds(100);
-	const auto now = std::chrono::high_resolution_clock::now();
+	auto subUpdate = [&scene]<bool IsRight>(std::bool_constant<IsRight>) {
+		auto&& [_maxEntity, max] = scene.domain().view<CompetitionMaxParticles<IsRight>>().all().front();
+		auto maxEntity = Entity(scene, _maxEntity);
 
-	if (now - lastUpdate >= std::chrono::milliseconds(50)) {
-		{
-			auto max = scene.entitiesWith<CompetitionMaxTextFlag<false>>().front();
-			auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<false>>().front();
+		auto buffer = defaultUniformBuffer();
 
-			auto currParticles = scene.domain().components<Particle<false>>().base().count();
-			maxParticlesLeft = std::max(maxParticlesLeft, currParticles);
+		// display current score
+		auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<IsRight>>().front();
+		auto currParticles = scene.domain().components<Particle<IsRight>>().base().count();
+		curr.removeComponent<text::TextComponent>();
+		curr.addComponent(
+			text::TextComponent(
+				text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
+				{buffer},
+				"Arial"
+			)
+		);
 
-			auto buffer = defaultUniformBuffer();
-
-			max.removeComponent<text::TextComponent>();
-			max.addComponent(
-				text::TextComponent(
-					text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesLeft))),
-					{buffer},
-					"Arial"
-				)
-			);
-			curr.removeComponent<text::TextComponent>();
-			curr.addComponent(
-				text::TextComponent(
-					text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
-					{buffer},
-					"Arial"
-				)
-			);
-		}
-		{
-			auto max = scene.entitiesWith<CompetitionMaxTextFlag<true>>().front();
-			auto curr = scene.entitiesWith<CompetitionCurrentTextFlag<true>>().front();
-
-			auto currParticles = scene.domain().components<Particle<true>>().base().count();
-			maxParticlesRight = std::max(maxParticlesRight, currParticles);
-
-			auto buffer = defaultUniformBuffer();
-
-			max.removeComponent<text::TextComponent>();
-			max.addComponent(
-				text::TextComponent(
-					text::convertTo<char32_t>(std::string_view(std::format("Max: {}", maxParticlesRight))),
-					{buffer},
-					"Arial"
-				)
-			);
-			curr.removeComponent<text::TextComponent>();
-			curr.addComponent(
-				text::TextComponent(
-					text::convertTo<char32_t>(std::string_view(std::format("Current: {}", currParticles))),
-					{buffer},
-					"Arial"
-				)
-			);
-		}
-		lastUpdate = now;
-	}
+		// display max score
+		max.value = std::max(max.value, currParticles);
+		maxEntity.removeComponent<text::TextComponent>();
+		maxEntity.addComponent(
+			text::TextComponent(
+				text::convertTo<char32_t>(std::string_view(std::format("Max: {}", max.value))),
+				{buffer},
+				"Arial"
+			)
+		);
+	};
+	subUpdate(std::true_type{});
+	subUpdate(std::false_type{});
 }
 
 }

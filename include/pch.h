@@ -1,5 +1,7 @@
 #pragma once
 
+// Precompiled headers
+
 #include <algorithm>
 #include <array>
 #include <chrono>

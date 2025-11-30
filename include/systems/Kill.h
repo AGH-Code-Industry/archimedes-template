@@ -6,6 +6,7 @@ using namespace arch;
 
 namespace vs {
 
+// Kills all entities with KillFlag
 struct KillSystem {
 	static void update(Scene& scene);
 };

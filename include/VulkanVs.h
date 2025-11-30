@@ -8,12 +8,13 @@ using namespace arch;
 
 namespace vs {
 
+// VulkanVs game
 class VulkanVs: public Application {
 public:
-	VulkanVs() noexcept = default;
+	VulkanVs() = default;
 
-	void init() noexcept override;
-	void update() noexcept override;
+	void init() override;
+	void update() override;
 
 private:
 	Ref<physics::System> _physicsSystem;

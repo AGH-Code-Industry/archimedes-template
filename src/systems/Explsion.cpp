@@ -5,7 +5,7 @@
 #include <archimedes/Font.h>
 #include <archimedes/Text.h>
 #include <components/BoomTextTime.h>
-#include <components/Wulkan.h>
+#include <components/Vulkan.h>
 #include <components/Kill.h>
 #include <systems/Particle.h>
 #include <SoundManager.h>
@@ -15,29 +15,31 @@
 namespace vs {
 
 void ExplosionSystem::makeText(Scene& scene) {
+	// settings
 	static auto rng = std::mt19937(std::random_device{}());
 	static auto fontSizeDist = std::uniform_real_distribution(75.f, 150.f);
-	static auto angleDist = std::uniform_real_distribution(75.f, 150.f);
-	static const auto margin = 100.f;
-	static auto xDist = std::uniform_real_distribution(0.f, windowWidth - margin);
-	static auto yDist = std::uniform_real_distribution(0.f, windowHeight - margin);
+	static auto angleDist = std::uniform_real_distribution(-75.f, 75.f);
+	static const auto margin = 200.f;
+	static auto xDist = std::uniform_real_distribution(margin, windowWidth - margin);
+	static auto yDist = std::uniform_real_distribution(margin, windowHeight - margin);
 
 	auto boomText = scene.newEntity();
 	boomText.addComponent(
 		scene::components::TransformComponent{
 			.position = float3{xDist(rng), yDist(rng), -0.2f},
-			.rotation = glm::angleAxis(angleDist(rng), zAxis()),
+			.rotation = glm::angleAxis(angleDist(rng), zAxis()) * glm::quat(0, 0, 0, 1),
 			.scale = fontSizeDist(rng) * float3 { 1, 1, 0 }
 		}
 	);
 	boomText.addComponent(
-		text::TextComponent(U"BOOM!", {defaultUniformBuffer()}, *font::FontDB::get()["Arial"]->bold())
+		text::TextComponent(U"BUM!", {defaultUniformBuffer()}, *font::FontDB::get()["Arial"]->bold())
 	);
 	boomText.addComponent<BoomTextTime>(std::chrono::high_resolution_clock::now());
 }
 
 void ExplosionSystem::updateText(ecs::Domain& domain) {
 	auto now = std::chrono::high_resolution_clock::now();
+	// updates time
 	domain.view<const text::TextComponent, const BoomTextTime>().forEach([&domain, &now](ecs::Entity entity, const BoomTextTime& time) {
 		if (now - time.value >= std::chrono::seconds(1)) {
 			domain.addComponent<Kill>(entity);
@@ -45,33 +47,28 @@ void ExplosionSystem::updateText(ecs::Domain& domain) {
 	});
 }
 
-void ExplosionSystem::makeExplosion(Scene& scene, Entity wulkan) {
-	auto&& wulkanComp = wulkan.getComponent<Wulkan>();
+void ExplosionSystem::makeExplosion(Scene& scene, Entity vulkan) {
+	auto&& vulkanComp = vulkan.getComponent<Vulkan>();
 
-	for (u32 i = 0; i != wulkanComp.particleCount; ++i) {
-		ParticleSystem::setup(scene, wulkan.addChild(), wulkanComp);
+	for (u32 i = 0; i != vulkanComp.particleCount; ++i) {
+		ParticleSystem::setup(scene, vulkan.addChild(), vulkanComp);
 	}
 
 	makeText(scene);
 
-	auto&& source = wulkan.firstChild().getComponent<audio::AudioSourceComponent>();
-	scene.domain().global<SoundManager>().audioManager->rewindSource(source);
-	scene.domain().global<SoundManager>().audioManager->playSource(source);
+	auto&& source = vulkan.getComponent<audio::AudioSourceComponent>();
+	auto&& audioManager = *scene.domain().global<SoundManager>().audioManager;
+	audioManager.rewindSource(source);
+	audioManager.playSource(source);
 }
 
-void ExplosionSystem::setupListener(Scene& scene, Entity wulkan1, Entity wulkan2) {
-	auto center = (wulkan1.getComponent<Wulkan>().particleOrigin + wulkan2.getComponent<Wulkan>().particleOrigin) / 2.f;
+void ExplosionSystem::setupListener(Scene& scene, Entity vulkan1, Entity vulkan2) {
+	auto center = (vulkan1.getComponent<Vulkan>().particleOrigin + vulkan2.getComponent<Vulkan>().particleOrigin) / 2.f;
+
 	auto listener = scene.newEntity();
-	/*auto&& transform = listener.addComponent(
-		scene::components::TransformComponent{
-			.position = center,
-			.rotation = {0, 0, 0, 1},
-			.scale = {1, 1, 0}
-		}
-	);
-	auto&& movable = listener.addComponent<physics::Moveable>();*/
 	auto&& listenerComp = listener.addComponent<audio::ListenerComponent>();
-	scene.domain().global<SoundManager>().audioManager->setListener(scene.domain(), listenerComp/*, transform, movable*/);
+
+	scene.domain().global<SoundManager>().audioManager->setListener(scene.domain(), listenerComp);
 }
 
 }
