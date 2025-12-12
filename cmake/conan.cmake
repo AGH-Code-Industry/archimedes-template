@@ -55,14 +55,14 @@ if(${PROJECT_NAME}_CONAN_INSTALL)
 	endif()
 
 	# set environment variables
-	set(ENV{CC} ${CMAKE_C_COMPILER})
-	set(ENV{CXX} ${CMAKE_CXX_COMPILER})
+	#set(ENV{CC} ${CMAKE_C_COMPILER})
+	#set(ENV{CXX} ${CMAKE_CXX_COMPILER})
 
 	# detect conan profile
-	execute_process(
-		COMMAND conan profile detect --force
-		COMMAND_ERROR_IS_FATAL ANY
-	)
+	#execute_process(
+	#	COMMAND conan profile detect --force
+	#	COMMAND_ERROR_IS_FATAL ANY
+	#)
 
 	file(MAKE_DIRECTORY ${${PROJECT_NAME}_CONAN_FILES})
 
